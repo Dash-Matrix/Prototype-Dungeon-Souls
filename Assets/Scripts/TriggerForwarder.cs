@@ -17,6 +17,8 @@ public class TriggerForwarder : MonoBehaviour
             {
                 Debug.Log("Dealt damage to " + enemy.name);
                 enemy.TakeDamage(parent.weaponDamage);
+
+                VFXManager.instance.SwordHit(gameObject.transform.position);
             }
         }
     }

@@ -14,7 +14,6 @@ public class Arrow : MonoBehaviour
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
-        Destroy(gameObject, 5f); // Auto-destroy after 5 seconds
     }
 
     void FixedUpdate()
@@ -61,6 +60,7 @@ public class Arrow : MonoBehaviour
         if (currentBounces > maxBounces)
         {
             DestroyArrow();
+            VFXManager.instance.ArrowHit(gameObject.transform.position);
         }
         else
         {

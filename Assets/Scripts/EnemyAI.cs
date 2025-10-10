@@ -124,13 +124,14 @@ public class EnemyAI : MonoBehaviour
     {
         animator.SetBool("IsMoving", rb.linearVelocity.magnitude > 0.1f);
         if (rb.linearVelocity.x != 0)
-            transform.localScale = new Vector3(Mathf.Sign(rb.linearVelocity.x), 1, 1);
+            transform.localScale = new Vector3(Mathf.Sign(-rb.linearVelocity.x), 1, 1);
     }
 
     public void TakeDamage(int damage)
     {
         if (isDead) return;
 
+        VFXManager.instance.EnemyDamage(gameObject.transform.position);
         health -= damage;
         healthSlider.value = health;
         animator.SetTrigger("Hit");
@@ -145,7 +146,15 @@ public class EnemyAI : MonoBehaviour
         rb.linearVelocity = Vector2.zero;
         GetComponent<Collider2D>().enabled = false;
         enabled = false;
+        VFXManager.instance.EnemyDie(gameObject.transform.position);
+        SFXManager.instance.Damage();
 
-        Destroy(gameObject, 2f);
+        enabled = false;
+
+        EnemyManager.instance.HandleEnemyDeath();
+        GameManager.instance.EnemyKilled();
+        healthSlider.gameObject.SetActive(false);
+        // Destroy(gameObject, 2f);
+
     }
 }

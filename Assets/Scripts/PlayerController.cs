@@ -1,3 +1,5 @@
+using System.Collections;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -10,6 +12,10 @@ public class PlayerController : MonoBehaviour
     public int maxHealth = 100;
     public int weaponDamage = 20;
 
+    [Header("Shield Settings")]
+    public float maxShieldDuration = 5f;
+    public float shieldCooldown = 2f;
+
     [Header("References")]
     public Slider healthSlider;
 
@@ -20,7 +26,14 @@ public class PlayerController : MonoBehaviour
     private Animator animator;
     private int currentHealth;
     private bool isDead;
+    private bool shielded;
     private bool facingRight = true;
+
+    private Coroutine shieldRoutine;
+    private bool isCooldown = false;
+
+    private float shieldTimer = 0f;
+    private float cooldownTimer = 0f;
 
     void Start()
     {
@@ -56,21 +69,67 @@ public class PlayerController : MonoBehaviour
         movement.y = Input.GetAxisRaw("Vertical");
         movement = movement.normalized;
 
-
-        if (Input.GetMouseButtonDown(0))
+        if (Input.GetMouseButtonDown(0) && !shielded)
         {
             animator.SetTrigger("Attack");
             triggerForwarder.DealDamage();
+            VFXManager.instance.SwordSlash(triggerForwarder.transform.position);
+            SFXManager.instance.SwordSlash();
         }
-        if (Input.GetMouseButtonDown(1))
+
+        // Shield logic using coroutines
+        if (Input.GetMouseButtonDown(1) && !shielded && !isCooldown)
         {
-            animator.SetBool("Shield", true);
+            shieldRoutine = StartCoroutine(StartShield());
         }
+
         if (Input.GetMouseButtonUp(1))
         {
+            shielded = false;
             animator.SetBool("Shield", false);
+
+            if (shieldRoutine != null)
+                StopCoroutine(shieldRoutine);
         }
     }
+
+    IEnumerator StartShield()
+    {
+        shielded = true;
+        animator.SetBool("Shield", true);
+
+        float elapsed = 0f;
+        while (elapsed < maxShieldDuration)
+        {
+            
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        StopShield();
+    }
+
+    void StopShield()
+    {
+        if (shielded)
+        {
+            shielded = false;
+            animator.SetBool("Shield", false);
+
+            if (shieldRoutine != null)
+                StopCoroutine(shieldRoutine);
+
+            StartCoroutine(ShieldCooldown());
+        }
+    }
+
+    IEnumerator ShieldCooldown()
+    {
+        isCooldown = true;
+        yield return new WaitForSeconds(shieldCooldown);
+        isCooldown = false;
+    }
+
     void UpdateAnimations()
     {
         bool isRunning = movement.magnitude > 0.1f;
@@ -90,8 +149,10 @@ public class PlayerController : MonoBehaviour
 
     public void TakeDamage(int damage)
     {
-        if (isDead) return;
+        if (isDead || shielded) return;
 
+
+        VFXManager.instance.PlayerDamage(gameObject.transform.position);
         currentHealth -= damage;
         currentHealth = Mathf.Max(0, currentHealth);
 
@@ -115,6 +176,8 @@ public class PlayerController : MonoBehaviour
 
         rb.linearVelocity = Vector2.zero;
         GetComponent<Collider2D>().enabled = false;
+        animator.SetTrigger("Die");
+        GameManager.instance.PlayerDied();
         enabled = false;
     }
 }
