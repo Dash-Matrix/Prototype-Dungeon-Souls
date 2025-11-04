@@ -29,6 +29,7 @@ public class EnemyAI : MonoBehaviour
     private float roamTimer;
     private float attackTimer;
     private bool isDead = false;
+    bool attackTriggered = false;
 
     void Start()
     {
@@ -74,18 +75,22 @@ public class EnemyAI : MonoBehaviour
     void Roam()
     {
         rb.linearVelocity = roamDirection * roamSpeed;
+        animator.SetTrigger("CancelAttack");
     }
 
     void Follow()
     {
         Vector2 direction = (player.position - transform.position).normalized;
         rb.linearVelocity = direction * moveSpeed;
+        animator.SetTrigger("CancelAttack");
     }
 
     void Retreat()
     {
         Vector2 direction = (transform.position - player.position).normalized;
         rb.linearVelocity = direction * moveSpeed;
+
+        animator.SetTrigger("CancelAttack");
     }
 
     void Attack()
